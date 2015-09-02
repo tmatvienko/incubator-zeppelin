@@ -1,0 +1,155 @@
+{
+  "paragraphs": [
+    {
+      "text": "import org.apache.spark.streaming._\nimport org.apache.spark.streaming.kafka._\n\nimport com.lambdaworks.jacks.JacksMapper\n\nval ssc \u003d new StreamingContext(sc, Seconds(2))\nval zkUrl \u003d \"localhost:2181\"\n\nval messages \u003d KafkaUtils.createStream(ssc, zkUrl, \"my-consumer-group\", Map(\"device_notification\" -\u003e 1))\nval msgs \u003d messages.window(Seconds(30))\n\ncase class ParsedNotification(deviceGuid: String, notification: String, timestamp: String, parameters: String)\ncase class Notification(deviceGuid: String, timestamp: String, mac: String, uuid:String, value: Double)\n\nmsgs.map(\n  msg \u003d\u003e JacksMapper.readValue[Map[String, Any]](msg._2)\n).map(\n    notificationMap \u003d\u003e ParsedNotification(\n      notificationMap.get(\"deviceGuid\").get.asInstanceOf[String],\n      notificationMap.get(\"notification\").get.asInstanceOf[String],\n      notificationMap.get(\"timestamp\").get.asInstanceOf[String],\n      notificationMap.get(\"parameters\").get.asInstanceOf[Map[String, String]].getOrElse(\"jsonString\", \"{}\"))\n  ).filter(\n    parsed \u003d\u003e parsed.notification \u003d\u003d \"NotificationReceived\"\n  ).map(\n    nmap \u003d\u003e (nmap.deviceGuid, nmap.timestamp, JacksMapper.readValue[Map[String, Any]](nmap.parameters))\n  ).filter(\n    nmap \u003d\u003e nmap._3.get(\"uuid\").get.asInstanceOf[String] \u003d\u003d  \"f000aa1104514000b000000000000000\"\n  ).map(\n    x \u003d\u003e Notification(x._1, x._2.substring(11,19),\n      x._3.get(\"mac\").get.asInstanceOf[String],\n      x._3.get(\"uuid\").get.asInstanceOf[String],\n      x._3.get(\"value\").get.asInstanceOf[Double])\n  ).foreachRDD( rdd\u003d\u003e\n  rdd.toDF().registerTempTable(\"notifications\")\n  )\n\nssc.start()",
+      "config": {
+        "colWidth": 12.0,
+        "graph": {
+          "mode": "table",
+          "height": 300.0,
+          "optionOpen": false,
+          "keys": [],
+          "values": [],
+          "groups": [],
+          "scatter": {}
+        },
+        "lineNumbers": true
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "jobName": "paragraph_1439909004718_1635682954",
+      "id": "20150818-174324_1027207916",
+      "result": {
+        "code": "SUCCESS",
+        "type": "TEXT",
+        "msg": "import org.apache.spark.streaming._\nimport org.apache.spark.streaming.kafka._\nimport com.lambdaworks.jacks.JacksMapper\nssc: org.apache.spark.streaming.StreamingContext \u003d org.apache.spark.streaming.StreamingContext@782b80f7\nzkUrl: String \u003d localhost:2181\nmessages: org.apache.spark.streaming.dstream.ReceiverInputDStream[(String, String)] \u003d org.apache.spark.streaming.kafka.KafkaInputDStream@14772a93\nmsgs: org.apache.spark.streaming.dstream.DStream[(String, String)] \u003d org.apache.spark.streaming.dstream.WindowedDStream@74ad3f4b\ndefined class ParsedNotification\ndefined class Notification\n"
+      },
+      "dateCreated": "Aug 18, 2015 5:43:24 PM",
+      "dateStarted": "Sep 2, 2015 5:42:12 PM",
+      "dateFinished": "Sep 2, 2015 5:42:32 PM",
+      "status": "FINISHED",
+      "progressUpdateIntervalMs": 500
+    },
+    {
+      "text": "%sql select value, timestamp from notifications where value \u003e ${threshold\u003d0.2}",
+      "config": {
+        "colWidth": 12.0,
+        "graph": {
+          "mode": "multiBarChart",
+          "height": 528.0,
+          "optionOpen": false,
+          "keys": [
+            {
+              "name": "timestamp",
+              "index": 1.0,
+              "aggr": "sum"
+            }
+          ],
+          "values": [
+            {
+              "name": "value",
+              "index": 0.0,
+              "aggr": "sum"
+            }
+          ],
+          "groups": [],
+          "scatter": {
+            "xAxis": {
+              "name": "value",
+              "index": 0.0,
+              "aggr": "sum"
+            },
+            "yAxis": {
+              "name": "timestamp",
+              "index": 1.0,
+              "aggr": "sum"
+            }
+          }
+        },
+        "tableHide": false,
+        "lineNumbers": true,
+        "title": false
+      },
+      "settings": {
+        "params": {
+          "threshold": "0.2"
+        },
+        "forms": {
+          "threshold": {
+            "name": "threshold",
+            "defaultValue": "0.2",
+            "hidden": false
+          }
+        }
+      },
+      "jobName": "paragraph_1439910129712_-382752459",
+      "id": "20150818-180209_1607867467",
+      "result": {
+        "code": "SUCCESS",
+        "type": "TABLE",
+        "msg": "value\ttimestamp\n"
+      },
+      "dateCreated": "Aug 18, 2015 6:02:09 PM",
+      "dateStarted": "Sep 2, 2015 6:15:15 PM",
+      "dateFinished": "Sep 2, 2015 6:15:15 PM",
+      "status": "FINISHED",
+      "progressUpdateIntervalMs": 500
+    },
+    {
+      "text": "%sql select value, timestamp from notifications;",
+      "config": {
+        "colWidth": 12.0,
+        "graph": {
+          "mode": "table",
+          "height": 300.0,
+          "optionOpen": false,
+          "keys": [],
+          "values": [],
+          "groups": [],
+          "scatter": {}
+        }
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "jobName": "paragraph_1440081692070_326225941",
+      "id": "20150820-174132_448481622",
+      "dateCreated": "Aug 20, 2015 5:41:32 PM",
+      "status": "ABORT",
+      "progressUpdateIntervalMs": 500
+    },
+    {
+      "config": {},
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "jobName": "paragraph_1439910340168_1379703987",
+      "id": "20150818-180540_519068571",
+      "dateCreated": "Aug 18, 2015 6:05:40 PM",
+      "status": "READY",
+      "progressUpdateIntervalMs": 500
+    }
+  ],
+  "name": "Kafka",
+  "id": "2AYS9CRSN",
+  "angularObjects": {
+    "2AVQX671P": [],
+    "2AXU3W6E8": [],
+    "2AY8AGGMQ": [],
+    "2AX1CF7EU": [],
+    "2AWKHV55Z": [],
+    "2AVCQ1J7N": [],
+    "2AWAEASBW": [],
+    "2AX89DR3X": [],
+    "2AYYEHR5C": [],
+    "2AVKEJ9H5": [],
+    "2AXAAKRE7": [],
+    "2AX88X5BW": []
+  },
+  "config": {},
+  "info": {}
+}
