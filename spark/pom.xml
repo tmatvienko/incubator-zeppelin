@@ -314,6 +314,19 @@
       <version>${spark.version}</version>
     </dependency>
 
+    <dependency>
+      <groupId>org.apache.spark</groupId>
+      <artifactId>spark-streaming-kafka_2.10</artifactId>
+      <version>${spark.version}</version>
+    </dependency>
+
+    <dependency>
+      <groupId>com.lambdaworks</groupId>
+      <artifactId>jacks_2.11</artifactId>
+      <version>2.3.3</version>
+    </dependency>
+
+
 
     <!-- hadoop -->
     <dependency>
